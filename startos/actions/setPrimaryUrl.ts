@@ -60,7 +60,7 @@ export const setPrimaryUrl = sdk.Action.withInput(
     )
 
     if (!previousUrl) {
-      await sdk.action.createOwnTask(effects, createInitialAdmin, 'critical', {
+      await sdk.action.createOwnTask(effects, createInitialAdmin, 'important', {
         reason: i18n(
           'Create the first Pocket ID admin user. Pocket ID requires the first user to be created from a browser so a passkey can be registered.',
         ),
