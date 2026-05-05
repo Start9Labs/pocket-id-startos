@@ -5,7 +5,7 @@ import { versionGraph } from '../versions'
 import { actions } from '../actions'
 import { restoreInit } from '../backups'
 import { seedFiles } from './seedFiles'
-import { setPrimaryUrl } from './setPrimaryUrl'
+import { taskSetPrimaryUrl } from './setPrimaryUrl'
 
 export const init = sdk.setupInit(
   restoreInit,
@@ -14,7 +14,7 @@ export const init = sdk.setupInit(
   setInterfaces,
   setDependencies,
   actions,
-  setPrimaryUrl,
+  taskSetPrimaryUrl,
 )
 
 export const uninit = sdk.setupUninit(versionGraph)
