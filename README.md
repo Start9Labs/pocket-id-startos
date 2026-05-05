@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="icon.svg" alt="Hello World Logo" width="21%">
+  <img src="icon.svg" alt="Pocket ID Logo" width="21%">
 </p>
 
-# Hello World on StartOS
+# Pocket ID on StartOS
 
-> **Upstream repo:** <https://github.com/Start9Labs/hello-world>
+> **Upstream docs:** <https://pocket-id.org/docs/introduction>
+>
+> Everything not listed in this document should behave the same as upstream
+> Pocket ID. If a feature, setting, or behavior is not mentioned here,
+> the upstream documentation is accurate and fully applicable.
 
-A minimal reference service for StartOS. It displays a simple web page — nothing more. Use [this repository](https://github.com/Start9Labs/hello-world-startos) as a template when packaging a new service for StartOS.
-
-## Getting Started
-
-To learn how to use this template to create your own StartOS service package, see the [Packaging Guide](https://docs.start9.com/packaging).
+[Pocket ID](https://github.com/pocket-id/pocket-id) is a simple, self-hosted OIDC provider that lets users authenticate to your services with passkeys instead of passwords.
 
 ---
 
@@ -36,50 +36,63 @@ To learn how to use this template to create your own StartOS service package, se
 
 | Property      | Value                                  |
 | ------------- | -------------------------------------- |
-| Image         | `ghcr.io/start9labs/hello-world`       |
-| Architectures | x86_64, aarch64, riscv64               |
-| Command       | `hello-world`                          |
+| Image         | `ghcr.io/pocket-id/pocket-id`          |
+| Architectures | x86_64, aarch64                        |
+| Entrypoint    | upstream entrypoint (`useEntrypoint()`) — handles PUID/PGID and chowns `/app/data` |
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose         |
-| ------ | ----------- | --------------- |
-| `main` | `/data`     | Persistent data |
+| Volume | Mount Point  | Purpose                                                                |
+| ------ | ------------ | ---------------------------------------------------------------------- |
+| `main` | `/app/data`  | Pocket ID database (SQLite by default), key material, and `store.json` |
+
+`store.json` lives at the root of the `main` volume and holds the StartOS-managed env values (`APP_URL`, `ENCRYPTION_KEY`, `TRUST_PROXY`).
 
 ---
 
 ## Installation and First-Run Flow
 
-No special setup. Install and start — the web page is immediately available.
+1. On install StartOS generates a fresh `ENCRYPTION_KEY` (44-char base62) into `store.json`.
+2. The `.local` LAN URL is selected as the default primary URL (`APP_URL`); change it later via the **Set Primary URL** action.
+3. Start the service. Once the web UI is reachable, browse to `/setup` and create the first admin account — Pocket ID's standard upstream onboarding.
+
+There is no separate "config" wizard inside StartOS; everything else is configured from the Pocket ID admin UI.
 
 ---
 
 ## Configuration Management
 
-No configurable settings. The service runs with no user-facing configuration.
+StartOS owns these env vars (passed to the daemon, persisted in `store.json`):
+
+| Variable         | Source                                        |
+| ---------------- | --------------------------------------------- |
+| `APP_URL`        | **Set Primary URL** action                    |
+| `ENCRYPTION_KEY` | Generated once on install                     |
+| `TRUST_PROXY`    | Hardcoded `true` (StartOS terminates TLS)     |
+
+All other Pocket ID settings — LDAP, SMTP, OIDC clients, branding, etc. — are managed from inside the Pocket ID admin UI and persisted in the SQLite database under `/app/data`.
 
 ---
 
 ## Network Access and Interfaces
 
-| Interface | Port | Protocol | Purpose              |
-| --------- | ---- | -------- | -------------------- |
-| Web UI    | 80   | HTTP     | Hello World web page |
+| Interface | Port | Protocol | Purpose                              |
+| --------- | ---- | -------- | ------------------------------------ |
+| `http`    | 1411 | HTTP     | Web UI, OIDC endpoints, WebAuthn API |
 
-**Access methods:**
-
-- LAN IP with unique port
-- `<hostname>.local` with unique port
-- Tor `.onion` address
-- Custom domains (if configured)
+WebAuthn (passkeys) requires HTTPS — use one of the StartOS-provided `.local`, Tor, or clearnet HTTPS URLs. Plain HTTP via raw IP will not let users register or use passkeys.
 
 ---
 
 ## Actions (StartOS UI)
 
-None.
+| Action              | Purpose                                                                                                                                                           | Inputs                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **Set Primary URL** | Choose which of the service's HTTP URLs is treated as the primary — used as `APP_URL`, the WebAuthn relying-party origin, and embedded in tokens / emails / links. | `url`: one of the available HTTP URLs   |
+
+> **Warning:** Pocket ID scopes passkeys to the primary URL's hostname. Changing `APP_URL` after passkeys have been registered invalidates them; users will need to re-enroll.
 
 ---
 
@@ -87,17 +100,17 @@ None.
 
 **Included in backup:**
 
-- `main` volume
+- `main` volume — SQLite database, encryption key file (if any), and `store.json`
 
-**Restore behavior:** Volume is fully restored before the service starts.
+**Restore behavior:** the volume is restored before startup. `ENCRYPTION_KEY` is preserved (it must be: it decrypts the data).
 
 ---
 
 ## Health Checks
 
-| Check         | Method              | Messages                                                           |
-| ------------- | ------------------- | ------------------------------------------------------------------ |
-| Web Interface | Port listening (80) | Success: "The web interface is ready" / Error: "The web interface is not ready" |
+| Check         | Method                  | Grace period |
+| ------------- | ----------------------- | ------------ |
+| Web Interface | Port listening on 1411  | 30s          |
 
 ---
 
@@ -109,13 +122,20 @@ None.
 
 ## Limitations and Differences
 
-1. **No meaningful functionality** — this is a reference/template package only
+1. **SQLite only.** Pocket ID supports PostgreSQL upstream; this package runs the default embedded SQLite. Sufficient for typical home / small-org deployments.
+2. **`MAXMIND_LICENSE_KEY` not exposed.** Optional GeoIP lookups are off until/unless this package surfaces an action for it.
+3. **No SMTP wiring yet.** Configure email (for password resets, invites, etc.) from inside the Pocket ID admin UI.
+4. **Primary URL coupling.** Because passkeys are scoped per hostname, treat the primary URL as effectively permanent once users start enrolling.
 
 ---
 
 ## What Is Unchanged from Upstream
 
-The service is identical to upstream. There are no modifications.
+- Admin UI, user UI, and `/setup` first-run flow
+- OIDC endpoints and behavior
+- LDAP integration (configure from the admin UI)
+- Audit log, API tokens, custom claims, branding
+- The image entrypoint, including PUID/PGID handling
 
 ---
 
@@ -128,14 +148,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 ## Quick Reference for AI Consumers
 
 ```yaml
-package_id: hello-world
-image: ghcr.io/start9labs/hello-world
-architectures: [x86_64, aarch64, riscv64]
+package_id: pocket-id
+image: ghcr.io/pocket-id/pocket-id
+architectures: [x86_64, aarch64]
 volumes:
-  main: /data
+  main: /app/data
 ports:
-  ui: 80
+  http: 1411
 dependencies: none
-startos_managed_env_vars: none
-actions: none
+startos_managed_env_vars:
+  - APP_URL
+  - ENCRYPTION_KEY
+  - TRUST_PROXY
+actions:
+  - set-primary-url
 ```
