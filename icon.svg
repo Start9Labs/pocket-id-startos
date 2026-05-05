@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4F46E5"/>
-      <stop offset="100%" stop-color="#7C3AED"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <path d="M256 120c-88.4 0-160 58.1-160 129.8 0 41.4 23.6 78.4 60.5 103.2l-12.9 51.5a8 8 0 0 0 11.6 8.8l62.6-36.1c12.3 2.5 25.2 3.8 38.2 3.8 88.4 0 160-58.1 160-129.8S344.4 120 256 120z" fill="white" opacity="0.95"/>
-  <text x="256" y="270" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="64" fill="#4F46E5">Hello!</text>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1015 1015" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-13.505,7.505)">
+        <g transform="matrix(1.04456,0,0,1.0262,2.12981,-15.6078)">
+            <rect x="1.056" y="0.019" width="1015.16" height="1014.68" style="fill:rgb(26,26,26);stroke:black;stroke-width:0.97px;"/>
+        </g>
+        <g transform="matrix(0.639507,0,0,0.639507,225.812,188.245)">
+            <path d="M506.6,0C716.12,0 886.58,170.45 886.58,379.96C886.58,462.29 860.68,540.64 811.67,606.5C763.63,671.09 697.89,718.01 621.54,742.21L600.44,748.91L550.15,500.87L564.06,494.14C609.47,472.19 638.82,425.43 638.82,375.03C638.82,302.12 579.51,242.8 506.61,242.8C433.71,242.8 374.38,302.12 374.38,375.03C374.38,425.43 403.74,472.19 449.15,494.14L462.8,500.75L381.79,999.99L155.43,999.99L155.43,0L506.61,0L506.6,0Z" style="fill:rgb(247,247,247);fill-rule:nonzero;"/>
+        </g>
+    </g>
 </svg>
