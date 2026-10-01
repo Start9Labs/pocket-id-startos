@@ -16,8 +16,8 @@ export const createInitialAdmin = sdk.Action.withoutInput(
     visibility: 'hidden',
   }),
 
-  async ({ effects }) => {
-    const appUrl = await storeJson.read((s) => s.APP_URL).const(effects)
+  async () => {
+    const appUrl = await storeJson.read((s) => s.APP_URL).once()
     if (!appUrl) {
       throw new Error(
         i18n('Primary URL is not set — run "Set Primary URL" first.'),
@@ -28,7 +28,7 @@ export const createInitialAdmin = sdk.Action.withoutInput(
       version: '1' as const,
       title: i18n('Create your first Pocket ID admin'),
       message: i18n(
-        'Open the URL below in a browser that can register a passkey. The Pocket ID setup page will prompt you for a username, email, first/last name, and to register a passkey. After this completes, dismiss this task and use the same URL to invite/manage further users.',
+        'Open the URL below in a browser that can register a passkey. The Pocket ID setup page will prompt you for a username, email, first/last name, and to register a passkey. Afterwards, use the same URL to invite and manage further users.',
       ),
       result: {
         type: 'single' as const,

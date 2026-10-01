@@ -34,29 +34,29 @@
 
 ## Image and Container Runtime
 
-| Property      | Value                                  |
-| ------------- | -------------------------------------- |
-| Image         | `ghcr.io/pocket-id/pocket-id`          |
-| Architectures | x86_64, aarch64                        |
+| Property      | Value                                                                              |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Image         | `ghcr.io/pocket-id/pocket-id`                                                      |
+| Architectures | x86_64, aarch64                                                                    |
 | Entrypoint    | upstream entrypoint (`useEntrypoint()`) — handles PUID/PGID and chowns `/app/data` |
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point  | Purpose                                                                |
-| ------ | ------------ | ---------------------------------------------------------------------- |
-| `main` | `/app/data`  | Pocket ID database (SQLite by default), key material, and `store.json` |
+| Volume | Mount Point | Purpose                                                                |
+| ------ | ----------- | ---------------------------------------------------------------------- |
+| `main` | `/app/data` | Pocket ID database (SQLite by default), key material, and `store.json` |
 
-`store.json` lives at the root of the `main` volume and holds the StartOS-managed env values (`APP_URL`, `ENCRYPTION_KEY`, `TRUST_PROXY`).
+`store.json` lives at the root of the `main` volume and holds the StartOS-managed env values (`APP_URL`, `ENCRYPTION_KEY`).
 
 ---
 
 ## Installation and First-Run Flow
 
 1. On install StartOS generates a fresh `ENCRYPTION_KEY` (44-char base62) into `store.json`.
-2. The `.local` LAN URL is selected as the default primary URL (`APP_URL`); change it later via the **Set Primary URL** action.
-3. Start the service. Once the web UI is reachable, browse to `/setup` and create the first admin account — Pocket ID's standard upstream onboarding.
+2. Install raises a critical **Set Primary URL** task; the service cannot start until it is run. No URL is preselected.
+3. The first run of **Set Primary URL** raises an important **Create First Admin User** task. Once the service is running, that action returns `<APP_URL>/setup`, Pocket ID's upstream onboarding page, where the first admin registers a passkey.
 
 There is no separate "config" wizard inside StartOS; everything else is configured from the Pocket ID admin UI.
 
@@ -64,13 +64,13 @@ There is no separate "config" wizard inside StartOS; everything else is configur
 
 ## Configuration Management
 
-StartOS owns these env vars (passed to the daemon, persisted in `store.json`):
+StartOS owns these env vars passed to the daemon. `APP_URL` and `ENCRYPTION_KEY` are persisted in `store.json`:
 
-| Variable         | Source                                        |
-| ---------------- | --------------------------------------------- |
-| `APP_URL`        | **Set Primary URL** action                    |
-| `ENCRYPTION_KEY` | Generated once on install                     |
-| `TRUST_PROXY`    | Hardcoded `true` (StartOS terminates TLS)     |
+| Variable         | Source                                                         |
+| ---------------- | -------------------------------------------------------------- |
+| `APP_URL`        | **Set Primary URL** action                                     |
+| `ENCRYPTION_KEY` | Generated once on install                                      |
+| `TRUST_PROXY`    | Hardcoded `true` in `startos/main.ts` (StartOS terminates TLS) |
 
 All other Pocket ID settings — LDAP, SMTP, OIDC clients, branding, etc. — are managed from inside the Pocket ID admin UI and persisted in the SQLite database under `/app/data`.
 
@@ -82,15 +82,18 @@ All other Pocket ID settings — LDAP, SMTP, OIDC clients, branding, etc. — ar
 | --------- | ---- | -------- | ------------------------------------ |
 | `http`    | 1411 | HTTP     | Web UI, OIDC endpoints, WebAuthn API |
 
-WebAuthn (passkeys) requires HTTPS — use one of the StartOS-provided `.local`, Tor, or clearnet HTTPS URLs. Plain HTTP via raw IP will not let users register or use passkeys.
+WebAuthn (passkeys) requires a secure context — use an HTTPS address of this interface. Plain HTTP via a raw IP will not let users register or use passkeys.
 
 ---
 
 ## Actions (StartOS UI)
 
-| Action              | Purpose                                                                                                                                                           | Inputs                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **Set Primary URL** | Choose which of the service's HTTP URLs is treated as the primary — used as `APP_URL`, the WebAuthn relying-party origin, and embedded in tokens / emails / links. | `url`: one of the available HTTP URLs   |
+| Action                      | Purpose                                                                                                                                                                                     | Inputs                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **Set Primary URL**         | Choose which of the service's HTTP URLs is treated as the primary — used as `APP_URL`, the WebAuthn relying-party origin, and embedded in tokens / emails / links. Service must be stopped. | `url`: one of the available HTTP URLs |
+| **Create First Admin User** | Hidden; surfaced as a task after the first primary URL is set. Returns `<APP_URL>/setup` as a copyable link and QR code. Service must be running.                                           | none                                  |
+
+An init watcher monitors the primary URL and the interface's addresses, including after initial setup. If `APP_URL` is unset or its address is removed, StartOS raises a critical **Set Primary URL** task.
 
 > **Warning:** Pocket ID scopes passkeys to the primary URL's hostname. Changing `APP_URL` after passkeys have been registered invalidates them; users will need to re-enroll.
 
@@ -108,9 +111,9 @@ WebAuthn (passkeys) requires HTTPS — use one of the StartOS-provided `.local`,
 
 ## Health Checks
 
-| Check         | Method                  | Grace period |
-| ------------- | ----------------------- | ------------ |
-| Web Interface | Port listening on 1411  | 30s          |
+| Check         | Method                 | Grace period |
+| ------------- | ---------------------- | ------------ |
+| Web Interface | Port listening on 1411 | 30s          |
 
 ---
 
@@ -162,4 +165,5 @@ startos_managed_env_vars:
   - TRUST_PROXY
 actions:
   - set-primary-url
+  - create-initial-admin
 ```

@@ -9,7 +9,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
   if (!store) throw new Error(i18n('store.json not found'))
 
-  const subcontainer = await sdk.SubContainer.of(
+  const subcontainer = sdk.SubContainer.of(
     effects,
     { imageId: 'pocket-id' },
     mount,
@@ -23,7 +23,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       env: {
         APP_URL: store.APP_URL,
         ENCRYPTION_KEY: store.ENCRYPTION_KEY,
-        TRUST_PROXY: String(store.TRUST_PROXY),
+        TRUST_PROXY: 'true',
       },
     },
     ready: {
