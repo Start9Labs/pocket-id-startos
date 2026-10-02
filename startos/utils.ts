@@ -20,15 +20,19 @@ export function getEncryptionKey() {
   })
 }
 
-export function getHttpInterfaceUrls(effects: T.Effects): Promise<string[]> {
-  return sdk.host
-    .getOwn(effects, uiMultiHostId, (host) => {
-      const iface =
-        host &&
-        Object.values(host.bindings)
-          .flatMap((b) => Object.values(b.interfaces))
-          .find((i) => i.id === httpInterfaceId)
-      return iface ? iface.addressInfo.nonLocal.format() : []
-    })
-    .const()
+export function getPrimaryUrlCandidates(effects: T.Effects) {
+  return sdk.host.getOwn(effects, uiMultiHostId, (host) => {
+    const domains =
+      host &&
+      Object.values(host.bindings)
+        .flatMap((b) => Object.values(b.interfaces))
+        .find((i) => i.id === httpInterfaceId)
+        ?.addressInfo.filter({ kind: 'domain', predicate: (h) => h.ssl })
+    return domains
+      ? domains.hostnames.map((h) => ({
+          url: domains.toUrl(h),
+          public: h.metadata.kind === 'public-domain',
+        }))
+      : []
+  })
 }

@@ -1,28 +1,22 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { getHttpInterfaceUrls } from '../utils'
+import { getPrimaryUrlCandidates } from '../utils'
 import { createInitialAdmin } from './createInitialAdmin'
 
 const { InputSpec, Value } = sdk
 
 export const inputSpec = InputSpec.of({
   url: Value.dynamicSelect(async ({ effects }) => {
-    const systemUrls = await getHttpInterfaceUrls(effects)
+    const candidates = await getPrimaryUrlCandidates(effects).const()
 
     return {
       name: i18n('Primary URL'),
       description: i18n(
-        'Pocket ID hands this URL to OIDC clients, embeds it in invite/verification emails, and uses it as the WebAuthn relying-party identifier. Passkeys are scoped to this hostname and **cannot be moved later** — pick the URL you intend to use long-term (a public domain you control if you plan to expose Pocket ID outside the LAN).',
+        "Pocket ID hands this URL to OIDC clients, embeds it in invite/verification emails, and uses it as the WebAuthn relying-party identifier. Passkeys are scoped to this hostname and **cannot be moved later**. Only HTTPS domains are offered: a public domain works with any service; a private domain works only on your LAN or VPN, and only with services that trust your server's Root CA. If the list is empty, add a domain to the Web UI interface first.",
       ),
       warning: null,
-      values: systemUrls.reduce(
-        (obj, url) => ({
-          ...obj,
-          [url]: url,
-        }),
-        {} as Record<string, string>,
-      ),
+      values: Object.fromEntries(candidates.map(({ url }) => [url, url])),
       default: '',
     }
   }),
