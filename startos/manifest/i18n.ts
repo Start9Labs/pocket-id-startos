@@ -1,20 +1,20 @@
 export const short = {
-  en_US: 'Bare bones example of a StartOS service',
-  es_ES: 'Ejemplo básico de un servicio de StartOS',
-  de_DE: 'Minimales Beispiel eines StartOS-Dienstes',
-  pl_PL: 'Podstawowy przykład usługi StartOS',
-  fr_FR: "Exemple minimaliste d'un service StartOS",
+  en_US: 'A simple OIDC provider that lets users sign in with passkeys',
+  es_ES: 'Un proveedor OIDC sencillo que permite iniciar sesión con passkeys',
+  de_DE: 'Ein einfacher OIDC-Anbieter für die Anmeldung mit Passkeys',
+  pl_PL: 'Prosty dostawca OIDC umożliwiający logowanie kluczami dostępu',
+  fr_FR: 'Un fournisseur OIDC simple pour se connecter avec des passkeys',
 }
 
 export const long = {
   en_US:
-    'Hello World is a template service that provides examples of basic StartOS features.',
+    'Pocket ID is a lightweight, self-hosted OIDC identity provider built around passkeys. It is a simpler alternative to heavy SSO stacks like Keycloak: stand it up once and use it as the login source for any service that speaks OIDC.',
   es_ES:
-    'Hello World es un servicio de plantilla que proporciona ejemplos de las características básicas de StartOS.',
+    'Pocket ID es un proveedor de identidad OIDC ligero y autoalojado basado en passkeys. Es una alternativa más sencilla a pesadas soluciones SSO como Keycloak: instálelo una vez y úselo como fuente de inicio de sesión para cualquier servicio compatible con OIDC.',
   de_DE:
-    'Hello World ist ein Vorlagen-Dienst, der Beispiele für grundlegende StartOS-Funktionen bietet.',
+    'Pocket ID ist ein schlanker, selbst gehosteter OIDC-Identitätsanbieter, der auf Passkeys setzt. Er ist eine einfachere Alternative zu schweren SSO-Lösungen wie Keycloak: einmal einrichten und als Anmeldequelle für jeden Dienst nutzen, der OIDC unterstützt.',
   pl_PL:
-    'Hello World to szablon usługi, który zawiera przykłady podstawowych funkcji StartOS.',
+    'Pocket ID to lekki, samodzielnie hostowany dostawca tożsamości OIDC oparty na kluczach dostępu. To prostsza alternatywa dla ciężkich rozwiązań SSO, takich jak Keycloak: skonfiguruj go raz i używaj jako źródła logowania dla każdej usługi obsługującej OIDC.',
   fr_FR:
-    'Hello World est un service modèle qui fournit des exemples des fonctionnalités de base de StartOS.',
+    "Pocket ID est un fournisseur d'identité OIDC léger et auto-hébergé, conçu autour des passkeys. C'est une alternative plus simple aux solutions SSO lourdes comme Keycloak : installez-le une fois et utilisez-le comme source de connexion pour tout service compatible OIDC.",
 }
