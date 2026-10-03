@@ -4,13 +4,12 @@
 
 # Pocket ID on StartOS
 
-> **Upstream docs:** <https://pocket-id.org/docs/introduction>
->
 > Everything not listed in this document should behave the same as upstream
 > Pocket ID. If a feature, setting, or behavior is not mentioned here,
-> the upstream documentation is accurate and fully applicable.
+> the upstream documentation is accurate and fully applicable — see the
+> Documentation section of `instructions.md` for links.
 
-[Pocket ID](https://github.com/pocket-id/pocket-id) is a simple, self-hosted OIDC provider that lets users authenticate to your services with passkeys instead of passwords.
+[Pocket ID](https://github.com/pocket-id/pocket-id) is a self-hosted OIDC provider that signs users in to other services with passkeys instead of passwords.
 
 ---
 
@@ -18,77 +17,76 @@
 
 - [Image and Container Runtime](#image-and-container-runtime)
 - [Volume and Data Layout](#volume-and-data-layout)
-- [Installation and First-Run Flow](#installation-and-first-run-flow)
-- [Configuration Management](#configuration-management)
-- [Network Access and Interfaces](#network-access-and-interfaces)
-- [Actions (StartOS UI)](#actions-startos-ui)
-- [Backups and Restore](#backups-and-restore)
-- [Health Checks](#health-checks)
+- [File Models](#file-models)
 - [Dependencies](#dependencies)
+- [Network Access and Interfaces](#network-access-and-interfaces)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
+- [Actions](#actions)
+- [Tasks](#tasks)
+- [Health Checks](#health-checks)
+- [Backups and Restore](#backups-and-restore)
 - [Limitations and Differences](#limitations-and-differences)
-- [Connecting Client Services](#connecting-client-services)
-- [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
-- [Contributing](#contributing)
 - [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
 ---
 
 ## Image and Container Runtime
 
-| Property      | Value                                                                              |
-| ------------- | ---------------------------------------------------------------------------------- |
-| Image         | `ghcr.io/pocket-id/pocket-id`                                                      |
-| Architectures | x86_64, aarch64                                                                    |
-| Entrypoint    | upstream entrypoint (`useEntrypoint()`) — handles PUID/PGID and chowns `/app/data` |
+The package runs the upstream image unmodified, in a single subcontainer.
+
+| Property      | Value                                                                     |
+| ------------- | ------------------------------------------------------------------------- |
+| Image         | `ghcr.io/pocket-id/pocket-id`, upstream unmodified                        |
+| Architectures | x86_64, aarch64                                                           |
+| Entrypoint    | Upstream entrypoint, which handles PUID/PGID and chowns `/app/data`       |
+| Subcontainers | `pocket-id-sub` — the Pocket ID server (web UI, OIDC endpoints, WebAuthn) |
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose                                                                |
-| ------ | ----------- | ---------------------------------------------------------------------- |
-| `main` | `/app/data` | Pocket ID database (SQLite by default), key material, and `store.json` |
+All state lives on one volume, which also holds the package's `store.json`.
 
-`store.json` lives at the root of the `main` volume and holds the StartOS-managed env values (`APP_URL`, `ENCRYPTION_KEY`).
-
----
-
-## Installation and First-Run Flow
-
-1. On install StartOS generates a fresh `ENCRYPTION_KEY` (44-char base62) into `store.json`.
-2. Install raises a critical **Set Primary URL** task; the service cannot start until it is run. No URL is preselected, and the choices are the interface's HTTPS domain addresses only, so the user must first add a public or private domain to the Web UI interface.
-3. The first run of **Set Primary URL** raises an important **Create First Admin User** task. Once the service is running, that action returns `<APP_URL>/setup`, Pocket ID's upstream onboarding page, where the first admin registers a passkey.
-
-There is no separate "config" wizard inside StartOS; everything else is configured from the Pocket ID admin UI.
+| Volume | Mount Point | Contents                                                       |
+| ------ | ----------- | -------------------------------------------------------------- |
+| `main` | `/app/data` | Embedded SQLite database, Pocket ID key material, `store.json` |
 
 ---
 
-## Configuration Management
+## File Models
 
-StartOS owns these env vars passed to the daemon. `APP_URL` and `ENCRYPTION_KEY` are persisted in `store.json`:
+The package writes no Pocket ID configuration file. It keeps its own settings in `store.json` and passes them to Pocket ID as environment variables on every launch; everything else — OIDC clients, users, groups, SMTP, LDAP, branding — is set in Pocket ID's admin UI and stored in its database.
 
-| Variable         | Source                                                         |
-| ---------------- | -------------------------------------------------------------- |
-| `APP_URL`        | **Set Primary URL** action                                     |
-| `ENCRYPTION_KEY` | Generated once on install                                      |
-| `TRUST_PROXY`    | Hardcoded `true` in `startos/main.ts` (StartOS terminates TLS) |
+`store.json` (JSON, root of `main`):
 
-All other Pocket ID settings — LDAP, SMTP, OIDC clients, branding, etc. — are managed from inside the Pocket ID admin UI and persisted in the SQLite database under `/app/data`.
+| Key              | Seeded                             | Rewritten by        | Delivered as     |
+| ---------------- | ---------------------------------- | ------------------- | ---------------- |
+| `APP_URL`        | Empty at install                   | **Set Primary URL** | `APP_URL`        |
+| `ENCRYPTION_KEY` | Random 44-character key at install | Nothing             | `ENCRYPTION_KEY` |
+
+Pocket ID reads both variables on every launch, so `store.json` is authoritative. A hand edit to `APP_URL` survives, but if it is not one of the interface's HTTPS domain URLs the **Set Primary URL** task is raised and the service cannot start. Never change `ENCRYPTION_KEY`: it decrypts data already in the database.
+
+`TRUST_PROXY=true` is also set on every launch, not stored, because StartOS terminates TLS in front of the service.
+
+---
+
+## Dependencies
+
+None. Services that sign in through Pocket ID are configured as OIDC clients in Pocket ID's admin UI and in their own settings; neither side declares a StartOS dependency.
 
 ---
 
 ## Network Access and Interfaces
 
-| Interface | Port | Protocol | Purpose                              |
-| --------- | ---- | -------- | ------------------------------------ |
-| `http`    | 1411 | HTTP     | Web UI, OIDC endpoints, WebAuthn API |
+One interface serves everything Pocket ID exposes.
 
-The primary URL (`APP_URL`) must be an HTTPS public or private domain on this interface. It is the OIDC issuer, and two parties must reach it at that exact URL:
+| Interface | Type | Port | Protocol | Purpose                              |
+| --------- | ---- | ---- | -------- | ------------------------------------ |
+| `http`    | ui   | 1411 | HTTP     | Web UI, OIDC endpoints, WebAuthn API |
 
-- **The user's browser** — the login page and the WebAuthn ceremony. Passkeys need a secure context and a hostname, which rules out IP addresses.
-- **Each client service's backend** — discovery, token exchange and signing keys. A client cannot be pointed at an internal address instead, because the issuer in the discovery document and in every token must match the URL the client was configured with.
+The primary URL (`APP_URL`) is the OIDC issuer and the WebAuthn relying-party ID, and it must be an HTTPS public or private domain on this interface. Two parties reach it at that exact URL: the user's browser, for the login page and passkey ceremony, and each client service's backend, for discovery, token exchange and signing keys. A client cannot be pointed at an internal address, because the issuer in the discovery document and in every token must match the URL the client was configured with.
 
-`.local`, IP and Tor addresses are therefore not offered: StartOS DNS does not resolve `.local` for service containers, passkeys don't work on IPs, and client containers can't reach `.onion` without a Tor proxy.
+`.local`, IP and Tor addresses are therefore not offered: service containers cannot resolve `.local`, passkeys don't work on IPs, and client containers can't reach `.onion` without a Tor proxy.
 
 | Primary URL                  | Client services that work                                                           |
 | ---------------------------- | ----------------------------------------------------------------------------------- |
@@ -96,78 +94,66 @@ The primary URL (`APP_URL`) must be an HTTPS public or private domain on this in
 | Public domain, Root CA       | Only those whose package trusts the StartOS Root CA                                 |
 | Private domain               | Only those whose package trusts the StartOS Root CA, and only from the LAN or a VPN |
 
-StartOS DNS answers private domains for service containers locally, so name resolution is not the obstacle for a private domain; certificate trust is. A client package trusts the Root CA by writing it into its container and pointing the runtime at it (for Node, `NODE_EXTRA_CA_CERTS` — see `uptime-kuma-startos/startos/main.ts`).
+Service containers resolve private domains through StartOS DNS, so a private domain fails on certificate trust, not name resolution. A client service whose sign-in fails at the callback with a TLS error is in this case.
 
 ---
 
-## Actions (StartOS UI)
+## Installation and First-Run Flow
 
-| Action                      | Purpose                                                                                                                                                                                               | Inputs                              |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| **Set Primary URL**         | Choose which of the interface's HTTPS domain URLs is treated as the primary — used as `APP_URL`, the WebAuthn relying-party origin, and embedded in tokens / emails / links. Service must be stopped. | `url`: one of the HTTPS domain URLs |
-| **Create First Admin User** | Hidden; surfaced as a task after the first primary URL is set. Returns `<APP_URL>/setup` as a copyable link and QR code. Service must be running.                                                     | none                                |
-
-An init watcher monitors the primary URL and the interface's addresses, including after initial setup. If `APP_URL` is unset or its address is removed, StartOS raises a critical **Set Primary URL** task.
-
-> **Warning:** Pocket ID scopes passkeys to the primary URL's hostname. Changing `APP_URL` after passkeys have been registered invalidates them; users will need to re-enroll.
+Install generates `ENCRYPTION_KEY` and then holds the service on a critical task until a primary URL is chosen. That task offers only HTTPS domains, so the user must add a public or private domain to the Web UI interface first. Choosing the URL raises a second task for creating the first admin, which happens in Pocket ID's own `/setup` page because the admin's passkey has to be registered from a browser. Everything after that is configured in Pocket ID's admin UI.
 
 ---
 
-## Backups and Restore
+## Actions
 
-**Included in backup:**
+Two actions, both tied to the primary URL.
 
-- `main` volume — SQLite database, encryption key file (if any), and `store.json`
+**Set Primary URL** — run at first setup, and again only if the chosen domain has been removed from the interface. It writes `APP_URL` to `store.json` and takes effect on the next start. Re-running it with the same URL is harmless; choosing a different URL invalidates every registered passkey and every client service's issuer configuration, so all users re-enroll and every client's discovery URL must be updated. No output.
 
-**Restore behavior:** the volume is restored before startup. `ENCRYPTION_KEY` is preserved (it must be: it decrypts the data).
+**Create First Admin User** — hidden; not user-facing except through its task. Read-only: it returns `<APP_URL>/setup` as a copyable link and QR code, and is safe to repeat.
+
+---
+
+## Tasks
+
+The service can be held on one critical task and prompts one important task.
+
+| Task                        | Severity  | Raised when                                                                                                                                           | Cleared by                                                         |
+| --------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Set Primary URL**         | critical  | `APP_URL` is empty (fresh install), or is no longer one of the interface's HTTPS domain URLs — re-evaluated whenever the interface's addresses change | Running the action. Returns if the chosen domain is removed later. |
+| **Create First Admin User** | important | The first time a primary URL is set                                                                                                                   | Running the action. Does not return.                               |
+
+A restore onto a server that lacks the backed-up primary domain raises **Set Primary URL**; re-adding the same domain, rather than choosing another, keeps existing passkeys valid.
 
 ---
 
 ## Health Checks
 
-| Check         | Method                                                      | Grace period |
-| ------------- | ----------------------------------------------------------- | ------------ |
-| Web Interface | Port listening on 1411                                      | 30s          |
-| Primary URL   | `APP_URL` is still one of the interface's HTTPS domain URLs | —            |
+Two checks: whether the server is up, and whether its primary URL still exists.
 
-**Primary URL** succeeds with a message saying whether the domain is public or private; for a private domain it notes that clients must be on the LAN or a VPN and must trust the Root CA. It fails if the domain has been removed from the interface. It does not test reachability.
+| Check         | Probes                                                      | Grace period |
+| ------------- | ----------------------------------------------------------- | ------------ |
+| Web Interface | Port 1411 listening                                         | 30s          |
+| Primary URL   | `APP_URL` is still one of the interface's HTTPS domain URLs | None         |
+
+**Web Interface** failing past the grace period means the server did not come up; check the service logs.
+
+**Primary URL** succeeds with a message saying whether the domain is public or private, and for a private domain that clients must be on the LAN or a VPN and trust the Root CA. It fails when the domain has been removed from the interface; re-add it, or run **Set Primary URL** knowing a new URL invalidates passkeys. It checks configuration only, not whether the URL is reachable.
 
 ---
 
-## Dependencies
+## Backups and Restore
 
-None.
+The `main` volume is copied wholesale, so a backup contains the SQLite database, Pocket ID's key material and `store.json`, including `ENCRYPTION_KEY`. Nothing is excluded and nothing rebuilds on restore. A restored instance is usable once its primary domain exists on the interface; see [Tasks](#tasks).
 
 ---
 
 ## Limitations and Differences
 
-1. **SQLite only.** Pocket ID supports PostgreSQL upstream; this package runs the default embedded SQLite. Sufficient for typical home / small-org deployments.
-2. **`MAXMIND_LICENSE_KEY` not exposed.** Optional GeoIP lookups are off until/unless this package surfaces an action for it.
-3. **No SMTP wiring yet.** Configure email (for password resets, invites, etc.) from inside the Pocket ID admin UI.
-4. **Primary URL coupling.** Because passkeys are scoped per hostname, treat the primary URL as effectively permanent once users start enrolling.
-
----
-
-## Connecting Client Services
-
-No StartOS dependency or package integration is involved. The admin registers each service in Pocket ID's admin UI (**OIDC Clients**) with that service's callback URL, then enters the client ID, client secret and discovery URL (`<APP_URL>/.well-known/openid-configuration`) in the service's own settings.
-
----
-
-## What Is Unchanged from Upstream
-
-- Admin UI, user UI, and `/setup` first-run flow
-- OIDC endpoints and behavior
-- LDAP integration (configure from the admin UI)
-- Audit log, API tokens, custom claims, branding
-- The image entrypoint, including PUID/PGID handling
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development workflow.
+1. **SQLite only.** Upstream also supports PostgreSQL; this package runs the embedded SQLite database.
+2. **No GeoIP.** `MAXMIND_LICENSE_KEY` is not exposed, so audit-log location lookups are off.
+3. **The primary URL must be an HTTPS domain.** `.local`, IP and Tor addresses cannot be chosen.
+4. **The primary URL is effectively permanent.** Passkeys and client issuer configuration are bound to it.
 
 ---
 
@@ -177,20 +163,25 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 package_id: pocket-id
 image: ghcr.io/pocket-id/pocket-id
 architectures: [x86_64, aarch64]
+subcontainers: [pocket-id-sub]
 volumes:
   main: /app/data
-ports:
-  http: 1411
-dependencies: none
+file_models:
+  - store.json
 startos_managed_env_vars:
   - APP_URL
   - ENCRYPTION_KEY
   - TRUST_PROXY
+dependencies: none
+interfaces:
+  http: { type: ui, port: 1411 }
 actions:
   - set-primary-url
   - create-initial-admin
+tasks:
+  - { action: set-primary-url, severity: critical }
+  - { action: create-initial-admin, severity: important }
 health_checks:
   - primary
   - primary-url
-primary_url: https public-domain or private-domain only (OIDC issuer, WebAuthn RP ID)
 ```
