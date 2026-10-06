@@ -12,7 +12,6 @@ export const manifest = setupManifest({
   upstreamRepo: 'https://github.com/pocket-id/pocket-id',
   marketingUrl: 'https://pocket-id.org/',
   donationUrl: null,
-  docsUrls: ['https://pocket-id.org/docs/introduction'],
   description: { short, long },
   volumes: ['main'],
   images: {
@@ -21,5 +20,4 @@ export const manifest = setupManifest({
       arch: ['x86_64', 'aarch64'],
     },
   },
-  dependencies: {},
 })

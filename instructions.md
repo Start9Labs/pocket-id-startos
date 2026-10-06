@@ -16,7 +16,7 @@ Pocket ID needs a domain on its Web UI interface before it can start. Its primar
 - **Public domain with Let's Encrypt** — works from anywhere and with every service that supports OIDC. Recommended.
 - **Private domain** — works only on your LAN or over a VPN such as StartTunnel. Your devices must trust your server's Root CA, and so must each connected service; check that service's instructions before relying on it.
 
-Passkeys are bound to the domain you choose. Changing it later means every user re-registers their passkeys and every connected service is set up again with the new URL.
+Once it is set, **Open UI** opens Pocket ID at that domain. Passkeys are bound to the domain you choose. Changing it later means every user re-registers their passkeys and every connected service is set up again with the new URL.
 
 ## Getting set up
 
