@@ -13,11 +13,11 @@ export const inputSpec = InputSpec.of({
     return {
       name: i18n('Primary URL'),
       description: i18n(
-        "Pocket ID hands this URL to OIDC clients, embeds it in invite/verification emails, and uses it as the WebAuthn relying-party identifier. Passkeys are scoped to this hostname and **cannot be moved later**. Only HTTPS domains are offered: a public domain works with any service; a private domain works only on your LAN or VPN, and only with services that trust your server's Root CA. If the list is empty, add a domain to the Web UI interface first.",
+        "Pocket ID hands this URL to OIDC clients, embeds it in invite/verification emails, and uses it as the WebAuthn relying-party identifier. Passkeys are scoped to this hostname and cannot be moved later. Only HTTPS domains are offered: a public domain works with any service; a private domain works only on your LAN or VPN, and only with services that trust your server's Root CA. If the list is empty, add a domain to the Web UI interface first.",
       ),
       warning: null,
       values: Object.fromEntries(candidates.map(({ url }) => [url, url])),
-      default: '',
+      default: null,
     }
   }),
 })

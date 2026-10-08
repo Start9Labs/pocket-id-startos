@@ -96,6 +96,8 @@ The primary URL (`APP_URL`) is the OIDC issuer and the WebAuthn relying-party ID
 
 Service containers resolve private domains through StartOS DNS, so a private domain fails on certificate trust, not name resolution. A client service whose sign-in fails at the callback with a TLS error is in this case.
 
+The interface nominates the primary URL as its preferred launch address, so **Open UI** opens Pocket ID there whenever that domain is one of the interface's addresses; otherwise StartOS picks an address as usual.
+
 ---
 
 ## Installation and First-Run Flow
