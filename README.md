@@ -32,11 +32,11 @@
 
 ## Image and Container Runtime
 
-The package runs the upstream image unmodified, in a single subcontainer.
+The package runs the upstream image with its CA store upgraded by the root `Dockerfile` (a temporary layer that comes out once upstream ships an image built on a fixed store), in a single subcontainer.
 
 | Property      | Value                                                                     |
 | ------------- | ------------------------------------------------------------------------- |
-| Image         | `ghcr.io/pocket-id/pocket-id`, upstream unmodified                        |
+| Image         | `ghcr.io/pocket-id/pocket-id` + root `Dockerfile` (CA store upgrade)      |
 | Architectures | x86_64, aarch64                                                           |
 | Entrypoint    | Upstream entrypoint, which handles PUID/PGID and chowns `/app/data`       |
 | Subcontainers | `pocket-id-sub` — the Pocket ID server (web UI, OIDC endpoints, WebAuthn) |
