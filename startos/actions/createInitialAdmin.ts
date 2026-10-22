@@ -36,6 +36,7 @@ export const createInitialAdmin = sdk.Action.withoutInput(
         copyable: true,
         masked: false,
         qr: true,
+        launchable: true,
       },
     }
   },
