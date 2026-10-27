@@ -1,7 +1,7 @@
+import { primaryUrl } from '../primaryUrl'
 import { sdk } from '../sdk'
-import { createInitialAdmin } from './createInitialAdmin'
-import { setPrimaryUrl } from './setPrimaryUrl'
+import { createLoginLink } from './createLoginLink'
 
 export const actions = sdk.Actions.of()
-  .addAction(setPrimaryUrl)
-  .addAction(createInitialAdmin)
+  .addAction(primaryUrl.action)
+  .addAction(createLoginLink)
