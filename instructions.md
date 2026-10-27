@@ -22,10 +22,15 @@ Once it is set, **Open UI** opens Pocket ID at that domain. Passkeys are bound t
 
 1. Add a public or private domain to the Web UI interface.
 2. Run the **Set Primary URL** task and choose that domain.
-3. Start the service.
-4. Run the **Create First Admin User** task. It shows a `/setup` link; open it in a browser on a device that supports passkeys, then enter your details and register a passkey.
+3. Start the service. Pocket ID creates your admin account, named `admin`.
+4. Run the **Create Login Link** task. Open the link it shows within an hour, in a browser on a device that supports passkeys; it signs you in as `admin`, and Pocket ID asks you to register a passkey.
+5. In Pocket ID, open your account and replace the placeholder email (`admin@` followed by your domain) with your own.
 
 The **Primary URL** health check shows whether Pocket ID is on a public or private domain. If you remove that domain, Pocket ID can't start until you either add it back or run **Set Primary URL** and choose a new one.
+
+## Getting back in
+
+If you, or anyone you've invited, loses every passkey, run the **Create Login Link** action with that person's username or email. The one-time link it returns signs them in once so they can register a new passkey.
 
 ## Connecting a service
 

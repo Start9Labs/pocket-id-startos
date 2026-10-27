@@ -1,5 +1,5 @@
-import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
+import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import { httpInterfaceId, uiMultiHostId, uiPort } from './utils'
 
@@ -18,8 +18,7 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
     username: null,
     path: '',
     query: {},
-    preferredLauncherAddress:
-      (await storeJson.read((s) => s.APP_URL).const(effects)) || null,
+    preferredLauncherAddress: await primaryUrl.bestUsable(effects).const(),
   })
 
   const uiReceipt = await uiMultiOrigin.export([ui])
