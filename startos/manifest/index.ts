@@ -2,7 +2,7 @@ import { setupManifest } from '@start9labs/start-sdk'
 import { long, short } from './i18n'
 
 const dockerImage = 'ghcr.io/pocket-id/pocket-id'
-const dockerVersion = 'v2.19.1'
+const dockerVersion = 'v2.19.2'
 
 export const manifest = setupManifest({
   id: 'pocket-id',
