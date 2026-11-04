@@ -15,5 +15,4 @@ Confirm the tag's image index carries both `linux/amd64` and `linux/arm64` befor
 ## Applying the bump
 
 1. Set `dockerVersion` in `startos/manifest/index.ts` to the new tag, keeping its `v` prefix.
-2. Set `version` in `startos/versions/current.ts` to the tag without the `v`, followed by `:0`, and rewrite `releaseNotes`.
-3. Read the upstream release notes for new required environment variables; `startos/main.ts` passes the daemon's environment.
+2. Read the upstream release notes for new required environment variables; `startos/main.ts` passes the daemon's environment.
