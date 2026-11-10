@@ -10,7 +10,7 @@ const inputSpec = InputSpec.of({
   user: Value.text({
     name: i18n('Username or email'),
     description: i18n(
-      'The account to sign in as. The admin account created on first start is "admin".',
+      'An existing username or email. The admin account Pocket ID created on first start is "admin".',
     ),
     default: 'admin',
     required: true,

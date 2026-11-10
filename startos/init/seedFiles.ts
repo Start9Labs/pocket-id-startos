@@ -11,7 +11,7 @@ export const seedFiles = sdk.setupOnInit(async (effects, kind) => {
     })
     await sdk.action.createOwnTask(effects, createLoginLink, 'important', {
       reason: i18n(
-        'Sign in as the admin with a one-time login link and register your passkey.',
+        'Sign in to the admin account Pocket ID created, named "admin", and register your passkey. You can change its username and email afterwards in Account Details.',
       ),
     })
   } else {
