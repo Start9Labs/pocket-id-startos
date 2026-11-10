@@ -13,7 +13,7 @@ const dict = {
   "Pocket ID hands this URL to OIDC clients, embeds it in invite/verification emails, and uses it as the WebAuthn relying-party identifier. Passkeys are scoped to this hostname and cannot be moved later. Only HTTPS domains are offered: a public domain works with any service; a private domain works only on your LAN or VPN, and only with services that trust your server's Root CA. If the list is empty, add a domain to the Web UI interface first.": 9,
   'Choose the URL Pocket ID treats as primary. This URL becomes the OIDC issuer and the WebAuthn relying-party ID — passkeys are bound to it. Changing it later invalidates every existing passkey, so this is a one-time choice.': 10,
   'Once users have registered passkeys, the URL cannot be changed without invalidating them.': 11,
-  'Sign in as the admin with a one-time login link and register your passkey.': 12,
+  'Sign in to the admin account Pocket ID created, named "admin", and register your passkey. You can change its username and email afterwards in Account Details.': 12,
   'Create Login Link': 13,
   'Generate a one-time link, valid for one hour, that signs a user in without a passkey. Use it to sign in as the admin for the first time, or to let anyone who has lost their passkeys back in to register a new one.': 14,
   'Pocket ID did not return a login link.': 15,
@@ -24,7 +24,7 @@ const dict = {
   'Public domain. Any service that supports OIDC can sign in through it.': 20,
   "Private domain. Reachable only on your LAN or VPN, and only by services that trust your server's Root CA.": 21,
   'Username or email': 22,
-  'The account to sign in as. The admin account created on first start is "admin".': 23,
+  'An existing username or email. The admin account Pocket ID created on first start is "admin".': 23,
 } as const
 
 /**
